@@ -39,15 +39,17 @@ with engine.connect() as conn:
 # set listener
 c.set_listener('', lst)
 
-# ssubscribe client
+# subscribe client
 c.subscribe('/queue/test', id=1, ack='client')
 time.sleep(2)
 messages = lst.msg_list
 
-print(messages)
+for m in messages:
+    print(m[0]['message-id'], ast.literal_eval(m[1])['text'],ast.literal_eval(m[1])['id'] )
 
-# ack to snarf message out of queue by message-id
-c.ack('mybroker-14aa2', 1)
+    # ack to acknowledge snarfing of message out of queue by message-id
+    c.ack(m[0]['message-id'], 1)
+
 c.disconnect()
 
 
