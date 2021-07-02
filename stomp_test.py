@@ -4,7 +4,7 @@
 from stomp import *
 from sqlalchemy.engine import create_engine
 from sqlalchemy.sql import text
-import time
+import time, ast
 
 # db engine for read/write
 engine = create_engine('postgresql+psycopg2://postgres:postgres@localhost/notes')
