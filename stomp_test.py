@@ -6,13 +6,17 @@
 from stomp import *
 from sqlalchemy.engine import create_engine
 from sqlalchemy.sql import text
-import time, ast
+import time, ast, os
+
+DB_HOST = os.environ.get('DB_HOST', 'postgresql+psycopg2://postgres:postgres@localhost/notes')
+AMQ_HOST = os.environ.get('AMQ_HOST', '127.0.0.1')
+QUEUE_NAME = os.environ.get('/queue/test')
 
 # db engine for read/write
-engine = create_engine('postgresql+psycopg2://postgres:postgres@localhost/notes')
+engine = create_engine(DB_HOST)
 
 # connection to AMQ via STOMP
-c = Connection([('127.0.0.1', 61613)])
+c = Connection([(AMQ_HOST, 61613)])
 
 # custom listener class for receiving messages
 class MyListener(ConnectionListener):
@@ -31,13 +35,13 @@ c.connect('admin', 'admin', wait=True)
 # instantiate
 lst = MyListener()
 
-# send dtest messages to AMQ
+# send test messages to AMQ
 with engine.connect() as conn:
     #rs = conn.execute('SELECT * FROM notes order by random() limit 1000;')
     rs = conn.execute('SELECT * FROM notes;')
     for row in rs:
         #print(row.text)
-        c.send('/queue/test', str({'text':row.text, 'id':row.note_id}), headers={"persistent":"true",
+        c.send(QUEUE_NAME, str({'text':row.text, 'id':row.note_id}), headers={"persistent":"true",
             "activemq.prefetchSize": 100})
 
 # set listener
@@ -45,7 +49,7 @@ c.set_listener('', lst)
 
 # subscribe client
 #c.subscribe('/queue/test', id=1, ack='client-individual')
-c.subscribe('/queue/test', id=1, ack='client')
+c.subscribe(QUEUE_NAME, id=1, ack='client')
 #c.subscribe('/queue/test', id=1, ack='auto')
 
 time.sleep(2)
